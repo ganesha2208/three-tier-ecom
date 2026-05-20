@@ -17,6 +17,27 @@ services:
       timeout: 5s
       retries: 10
 
+  identity-service:
+    build:
+      context: ./services/identity-service
+      dockerfile: Dockerfile
+    container_name: shopforge_identity
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-ecom}:${POSTGRES_PASSWORD:-ecom_pw}@db:5432/${POSTGRES_DB:-ecom}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-use-a-long-random-string}
+      ENV: ${ENV:-dev}
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./services/identity-service:/app
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
   backend:
     build:
       context: ./backend
