@@ -1,0 +1,30 @@
+# kind cluster config for ShopForge local K8s practice.
+# "kind" = Kubernetes IN Docker — har "node" ek Docker container hai.
+#
+# Yeh cluster aapke EKS plan ko mirror karta hai:
+#   - 1 control-plane node (EKS mein yeh AWS-managed hota hai, yahan local)
+#   - 2 worker nodes        (EKS plan: `--nodes 2` standard-workers)
+#
+# extraPortMappings: kind ke andar ka port 80/443 ko laptop ke 8080/8443 se
+# jodta hai — yeh Mini-phase B mein Ingress ke liye chahiye. Cluster banne ke
+# baad ise badal nahi sakte, isliye abhi se daal diya.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: shopforge-practice
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
+  - role: worker
+  - role: worker
