@@ -2,7 +2,6 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import settings
-from app.models.cart import Cart, CartItem
 from app.models.order import Order, OrderItem, OrderStatus, PaymentStatus
 from app.models.product import Product
 from app.models.user import Address, User
@@ -150,7 +149,7 @@ def _create_payment_intent(order: Order) -> tuple[str | None, bool]:
         )
         order.payment_intent_id = intent.id
         return intent.client_secret, False
-    except Exception as e:
+    except Exception:
         # Fall back gracefully so checkout still works in dev
         order.payment_intent_id = f"mock_pi_{order.id}"
         return None, True

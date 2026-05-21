@@ -1,0 +1,8 @@
+# Ruff configuration — https://docs.astral.sh/ruff/
+target-version = "py312"
+line-length = 100
+
+[lint.per-file-ignores]
+# conftest.py must set environment variables before importing the app,
+# so several imports legitimately appear after that code (E402).
+"tests/conftest.py" = ["E402"]

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Header, HTTPException, Request, status
 
 from app.core.config import settings
 from app.core.deps import CurrentUser, DbSession
-from app.models.order import Order, OrderStatus, PaymentStatus
+from app.models.order import Order, PaymentStatus
 from app.schemas.order import CheckoutIn, CheckoutOut, OrderOut
 from app.services import order_service
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -229,7 +229,7 @@ export default function AdminProductsPage() {
   );
 }
 
-function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
+function Field({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
     <div className={wide ? "sm:col-span-2" : ""}>
       <label className="label">{label}</label>
