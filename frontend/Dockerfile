@@ -2,7 +2,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copy manifest first so `npm install` is cached when only source changes
+# Copy manifest first so the npm layer is cached when only source changes
 COPY package*.json ./
 RUN npm install --no-audit --no-fund
 
@@ -14,9 +14,11 @@ ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npx vite build         # bundle only (skips tsc type-check); outputs to /app/dist
 
-# ---- Production stage: serve the static files with nginx ----
-FROM nginx:alpine
+# ---- Production stage: serve static files with non-root nginx ----
+# nginx-unprivileged runs as the non-root "nginx" user (uid 101) and
+# listens on 8080 — a non-root user cannot bind ports below 1024.
+FROM nginxinc/nginx-unprivileged:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
