@@ -1,0 +1,22 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local virtualenvs
+.venv/
+venv/
+
+# Secrets and local data — must never go into the image
+.env
+.env.*
+*.db
+*.sqlite3
+media/
+
+# Dev / VCS noise
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+README.md
