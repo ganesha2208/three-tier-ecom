@@ -1,5 +1,5 @@
 # ---- Build stage: compile the Vite app to static files ----
-FROM node:20-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 
 # Copy manifest first so the npm layer is cached when only source changes
