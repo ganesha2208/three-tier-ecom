@@ -32,3 +32,8 @@ output "eks_cluster_endpoint" {
   description = "EKS cluster API endpoint"
   value       = module.eks.cluster_endpoint
 }
+
+output "lb_controller_role_arn" {
+  description = "IAM role ARN for the AWS Load Balancer Controller service account"
+  value       = module.lb_controller_irsa.iam_role_arn
+}

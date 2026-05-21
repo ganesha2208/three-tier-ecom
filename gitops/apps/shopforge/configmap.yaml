@@ -1,0 +1,21 @@
+# Non-secret configuration for the backend.
+# Secret values (DATABASE_URL, SECRET_KEY) live in a separate K8s Secret
+# created imperatively during the live session — never committed to git.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopforge-config
+  namespace: shopforge
+  labels:
+    app.kubernetes.io/part-of: shopforge
+data:
+  ENV: "prod"                       # "prod" disables /docs, /redoc, openapi.json
+  PROJECT_NAME: "ShopForge API"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+  # Seeding is performed once by the db-migrate Job (which sets this true
+  # itself). App pods never read this — only app/scripts/seed.py does.
+  SEED_ON_STARTUP: "false"
+  # Frontend and API are served from the SAME ALB origin, so browser API
+  # calls are same-origin and never trigger a CORS preflight. This value is
+  # therefore not load-bearing; left as a sane placeholder.
+  BACKEND_CORS_ORIGINS: "http://localhost"

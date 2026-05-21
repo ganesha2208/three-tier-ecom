@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: shopforge
+  labels:
+    app: frontend
+    app.kubernetes.io/part-of: shopforge
+spec:
+  # replicas intentionally omitted — the HorizontalPodAutoscaler owns it.
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        app.kubernetes.io/part-of: shopforge
+    spec:
+      securityContext:
+        runAsNonRoot: true                 # nginx-unprivileged runs as uid 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: frontend
+          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-frontend:IMAGE_TAG_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false   # nginx writes temp files under /tmp
