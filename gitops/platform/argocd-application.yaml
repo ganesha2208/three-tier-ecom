@@ -1,0 +1,30 @@
+# The single Argo CD Application that makes this repo the source of truth
+# for the ShopForge deployment. Argo CD watches gitops/apps/shopforge on the
+# main branch and continuously keeps the cluster matching it.
+#
+# Applied once by gitops/bootstrap.sh. From then on, deploying = committing.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shopforge
+  namespace: argocd
+  finalizers:
+    # Makes `kubectl delete application shopforge` also prune every resource
+    # it created — including the Ingress, which tells the controller to
+    # delete the ALB. Critical for a clean teardown before terraform destroy.
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ganesha2208/three-tier-ecom.git
+    targetRevision: main
+    path: gitops/apps/shopforge
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: shopforge
+  syncPolicy:
+    automated:
+      prune: true      # delete cluster resources removed from git
+      selfHeal: true   # revert any manual change made directly in the cluster
+    syncOptions:
+      - CreateNamespace=true

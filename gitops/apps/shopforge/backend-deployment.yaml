@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: shopforge
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: shopforge
+spec:
+  # replicas intentionally omitted — the HorizontalPodAutoscaler owns it.
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        app.kubernetes.io/part-of: shopforge
+    spec:
+      securityContext:
+        runAsNonRoot: true                 # image already runs as uid 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-backend:IMAGE_TAG_PLACEHOLDER
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: shopforge-config
+            - secretRef:
+                name: shopforge-secrets    # DATABASE_URL + SECRET_KEY
+          # Liveness: process is up. No dependencies checked.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # Readiness: can we serve traffic? /ready checks the database.
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            # readOnlyRootFilesystem left false: the app writes uploads to
+            # /app/media. Hardening to RO-rootfs + emptyDir is a later task.
+            readOnlyRootFilesystem: false

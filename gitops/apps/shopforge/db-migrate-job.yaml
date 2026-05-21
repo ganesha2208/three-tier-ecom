@@ -1,0 +1,48 @@
+# Runs database migrations + seed BEFORE the app pods roll out.
+#   argocd.argoproj.io/hook: PreSync  => Argo CD runs this Job and waits for
+#   it to Complete before syncing the Deployments.
+# Both commands are idempotent, so re-running on every sync is safe.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  namespace: shopforge
+  labels:
+    app.kubernetes.io/part-of: shopforge
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: db-migrate
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: migrate
+          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-backend:IMAGE_TAG_PLACEHOLDER
+          command:
+            - sh
+            - -c
+            - "alembic upgrade head && python -m app.scripts.seed"
+          env:
+            # The Job (unlike app pods) must actually seed the database.
+            - name: SEED_ON_STARTUP
+              value: "true"
+          # Only the Secret is needed (DATABASE_URL + SECRET_KEY). The Secret
+          # is created imperatively and exists before the first sync; the
+          # ConfigMap belongs to the main Sync wave and is not present yet.
+          envFrom:
+            - secretRef:
+                name: shopforge-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

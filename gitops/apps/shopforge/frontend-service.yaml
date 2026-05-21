@@ -1,0 +1,18 @@
+# Stable in-cluster address for the frontend pods. The Ingress routes
+# all non-/api traffic to this Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: shopforge
+  labels:
+    app: frontend
+    app.kubernetes.io/part-of: shopforge
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

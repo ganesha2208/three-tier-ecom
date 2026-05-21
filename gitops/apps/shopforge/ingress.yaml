@@ -1,0 +1,41 @@
+# One ALB, path-routed:
+#   /api/*  -> backend  (FastAPI on :8000)
+#   /*      -> frontend (nginx SPA on :8080)
+# The AWS Load Balancer Controller turns this Ingress into a real ALB.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shopforge
+  namespace: shopforge
+  labels:
+    app.kubernetes.io/part-of: shopforge
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # Health check path that BOTH services answer 200 on:
+    #   backend  /health -> {"status":"ok"}
+    #   frontend /health -> SPA fallback serves index.html (200)
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          # More specific path first — the controller orders ALB listener
+          # rules by specificity, so /api wins over / for /api/* requests.
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 8080
