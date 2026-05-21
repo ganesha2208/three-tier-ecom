@@ -14,6 +14,11 @@ venv/
 *.sqlite3
 media/
 
+# Tests and dev-only files — not needed in the production image
+tests/
+requirements-dev.txt
+pytest.ini
+
 # Dev / VCS noise
 .git/
 .gitignore
