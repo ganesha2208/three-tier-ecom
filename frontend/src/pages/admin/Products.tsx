@@ -54,7 +54,7 @@ export default function AdminProductsPage() {
       if (!draft.category_id) throw new Error("Pick a category");
       const payload = { ...draft, category_id: Number(draft.category_id) };
       if (draft.id) {
-        await productsApi.update(draft.id, payload);
+        await productsApi.update(draft.id, payload as any);
       } else {
         await productsApi.create(payload as any);
       }
