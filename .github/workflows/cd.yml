@@ -1,0 +1,74 @@
+name: CD
+
+# On every push to main: build, scan, SBOM, push to ECR, and sign each image.
+on:
+  push:
+    branches: [main]
+
+# id-token: write lets GitHub mint the OIDC token — used both to assume the
+# AWS role (keyless ECR auth) and for cosign keyless image signing.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-push:
+    name: Build, scan, sign & push
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [backend, frontend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::563332534764:role/github-actions-ecr-push
+          aws-region: ap-south-1
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        run: docker build -t shopforge-${{ matrix.service }}:ci ${{ matrix.service }}
+
+      - name: Scan image with Trivy (fail on fixable HIGH/CRITICAL)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy image --exit-code 1 \
+            --severity HIGH,CRITICAL --ignore-unfixed \
+            shopforge-${{ matrix.service }}:ci
+
+      - name: Generate SBOM (syft, CycloneDX)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            anchore/syft shopforge-${{ matrix.service }}:ci \
+            -o cyclonedx-json > sbom-${{ matrix.service }}.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}
+          path: sbom-${{ matrix.service }}.cdx.json
+
+      - name: Push image to Amazon ECR
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/shopforge-${{ matrix.service }}:${{ github.sha }}
+        run: |
+          docker tag shopforge-${{ matrix.service }}:ci "$IMAGE"
+          docker push "$IMAGE"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image with cosign (keyless)
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/shopforge-${{ matrix.service }}:${{ github.sha }}
+        run: |
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
+          cosign sign --yes "$DIGEST"
