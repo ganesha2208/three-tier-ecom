@@ -1,0 +1,33 @@
+version: 2
+
+# Dependabot opens PRs to keep dependencies and base images up to date.
+updates:
+  # Python backend dependencies (requirements*.txt)
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+
+  # React frontend dependencies (package.json)
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+
+  # Backend Docker base image
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+
+  # Frontend Docker base images
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+
+  # GitHub Actions versions in the workflows
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
