@@ -1,5 +1,8 @@
 # ShopForge — Production-Grade E-Commerce (React + FastAPI + PostgreSQL)
 
+[![CI](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/ci.yml/badge.svg)](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/ci.yml)
+[![CD](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/cd.yml/badge.svg)](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/cd.yml)
+
 A full-featured, three-tier e-commerce application built with senior-engineering
 practices: layered architecture, typed APIs, JWT auth with refresh tokens,
 PostgreSQL with Alembic migrations, optimistic UI, Stripe payments (with
