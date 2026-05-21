@@ -1,0 +1,7 @@
+# Terraform — never commit local state, provider binaries, or crash logs.
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Keep .terraform.lock.hcl committed (it pins provider versions).
