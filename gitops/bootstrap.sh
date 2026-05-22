@@ -44,7 +44,10 @@ helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-contro
 
 echo "==> [5/6] Installing Argo CD"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd -f \
+# --server-side avoids the 256KB last-applied-configuration annotation limit
+# (the applicationsets CRD is larger than that). --force-conflicts lets it
+# take ownership of resources a prior client-side apply may have created.
+kubectl apply -n argocd --server-side --force-conflicts -f \
   https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl -n argocd rollout status deploy/argocd-server --timeout=300s
 
