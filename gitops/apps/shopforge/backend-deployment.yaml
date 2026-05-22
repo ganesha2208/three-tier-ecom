@@ -20,6 +20,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true                 # image already runs as uid 1000
+        runAsUser: 1000                    # explicit uid — kubelet can verify non-root
         seccompProfile:
           type: RuntimeDefault
       containers:

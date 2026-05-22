@@ -20,6 +20,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true                 # nginx-unprivileged runs as uid 101
+        runAsUser: 101                     # explicit uid — kubelet can verify non-root
         seccompProfile:
           type: RuntimeDefault
       containers:
