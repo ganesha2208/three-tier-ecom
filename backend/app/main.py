@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -44,7 +45,7 @@ async def correlation_id_middleware(request: Request, call_next):
     structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
     response = await call_next(request)
     response.headers["X-Request-ID"] = correlation_id
-    if request.url.path not in ("/health", "/ready"):
+    if request.url.path not in ("/health", "/ready", "/metrics"):
         logger.info(
             "request",
             method=request.method,
@@ -90,3 +91,8 @@ def ready(db: Session = Depends(get_db)):
 
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+
+# Expose Prometheus metrics at /metrics — request count, latency, status codes.
+# Prometheus scrapes this endpoint (see the ServiceMonitor in observability/).
+Instrumentator().instrument(app).expose(app)

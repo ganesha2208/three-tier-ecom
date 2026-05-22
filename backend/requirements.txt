@@ -16,3 +16,6 @@ stripe==11.4.1
 python-slugify==8.0.4
 httpx==0.28.1
 structlog==24.4.0
+
+# Phase 6 — exposes a Prometheus /metrics endpoint on the API
+prometheus-fastapi-instrumentator==7.0.0
