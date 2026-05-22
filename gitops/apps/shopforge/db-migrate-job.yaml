@@ -24,7 +24,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: migrate
-          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-backend:IMAGE_TAG_PLACEHOLDER
+          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-backend:f2b9d15927817df338304ef0be10a7650f7e79f0
           command:
             - sh
             - -c
