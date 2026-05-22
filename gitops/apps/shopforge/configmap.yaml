@@ -16,6 +16,7 @@ data:
   # itself). App pods never read this — only app/scripts/seed.py does.
   SEED_ON_STARTUP: "false"
   # Frontend and API are served from the SAME ALB origin, so browser API
-  # calls are same-origin and never trigger a CORS preflight. This value is
-  # therefore not load-bearing; left as a sane placeholder.
-  BACKEND_CORS_ORIGINS: "http://localhost"
+  # calls are same-origin and never trigger a CORS preflight.
+  # NOTE: pydantic-settings parses List[str] env vars as JSON — the value
+  # MUST be a JSON array string, not a bare string.
+  BACKEND_CORS_ORIGINS: '["http://localhost"]'
