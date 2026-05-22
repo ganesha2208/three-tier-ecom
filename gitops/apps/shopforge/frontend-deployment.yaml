@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: frontend
-          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-frontend:IMAGE_TAG_PLACEHOLDER
+          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-frontend:f2b9d15927817df338304ef0be10a7650f7e79f0
           ports:
             - containerPort: 8080
           livenessProbe:
