@@ -1,0 +1,28 @@
+# Helm values for grafana/loki-stack — Loki (the log store) + Promtail.
+# Promtail runs as a DaemonSet on every node and ships each pod's
+# stdout/stderr into Loki, where Grafana can query it.
+
+loki:
+  enabled: true
+  persistence:
+    enabled: false          # ephemeral — short-lived demo cluster
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+promtail:
+  enabled: true             # the log collector (DaemonSet)
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+
+# We run Grafana from the kube-prometheus-stack chart instead, so the
+# loki-stack chart should not deploy its own.
+grafana:
+  enabled: false
+prometheus:
+  enabled: false

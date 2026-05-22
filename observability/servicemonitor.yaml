@@ -1,0 +1,19 @@
+# A ServiceMonitor is the bridge between the app and Prometheus.
+# It tells Prometheus: "find the backend Service, scrape its /metrics".
+# Prometheus discovers this automatically because the stack is installed
+# with serviceMonitorSelectorNilUsesHelmValues=false (see the values file).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: shopforge-backend
+  namespace: shopforge
+  labels:
+    app.kubernetes.io/part-of: shopforge
+spec:
+  selector:
+    matchLabels:
+      app: backend          # matches the backend Service
+  endpoints:
+    - port: http            # the Service's port named "http" (8000)
+      path: /metrics
+      interval: 30s

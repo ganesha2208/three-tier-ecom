@@ -1,0 +1,48 @@
+# Prometheus alert rules for the ShopForge backend.
+# Prometheus auto-discovers this PrometheusRule (ruleSelectorNilUsesHelmValues=false).
+# Cluster-level alerts (pod crash-loop, node pressure, etc.) are already
+# covered by kube-prometheus-stack's built-in rules — these are app-specific.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: shopforge-backend
+  namespace: shopforge
+  labels:
+    app.kubernetes.io/part-of: shopforge
+spec:
+  groups:
+    - name: shopforge-backend.rules
+      rules:
+        # Fires when too many requests are failing.
+        - alert: ShopForgeHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+              / clamp_min(sum(rate(http_requests_total[5m])), 1) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend 5xx error rate above 5%"
+            description: "More than 5% of backend requests have failed for 5 minutes."
+
+        # Fires when the app is slow.
+        - alert: ShopForgeHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend p95 latency above 1s"
+            description: "95th-percentile request latency has exceeded 1 second for 10 minutes."
+
+        # Fires when Prometheus cannot reach the backend at all.
+        - alert: ShopForgeBackendDown
+          expr: up{namespace="shopforge", service="backend"} == 0
+          for: 3m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Backend scrape target is down"
+            description: "Prometheus cannot scrape the backend /metrics endpoint."

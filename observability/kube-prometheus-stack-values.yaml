@@ -1,0 +1,41 @@
+# Helm values for prometheus-community/kube-prometheus-stack.
+# This one chart bundles Prometheus + Grafana + Alertmanager + the exporters.
+# Tuned small for a short-lived demo cluster (ephemeral storage, low limits).
+
+prometheus:
+  prometheusSpec:
+    # Keep only 6h of metrics — this cluster lives ~1 day.
+    retention: 6h
+    # By default Prometheus only picks up ServiceMonitors / PrometheusRules
+    # that carry this Helm release's label. Setting these false makes it
+    # discover ours (shopforge-backend ServiceMonitor, our alert rules) too.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+grafana:
+  # adminPassword left unset on purpose — kube-prometheus-stack's documented
+  # default is "prom-operator", so no secret is ever committed to git.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  # Wire Loki in as a data source so logs are queryable from Grafana.
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki.observability.svc.cluster.local:3100
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
