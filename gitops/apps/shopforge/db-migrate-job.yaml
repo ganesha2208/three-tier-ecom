@@ -25,7 +25,7 @@ spec:
         runAsUser: 1000                    # explicit uid — kubelet can verify non-root
       containers:
         - name: migrate
-          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-backend:f2b9d15927817df338304ef0be10a7650f7e79f0
+          image: 563332534764.dkr.ecr.ap-south-1.amazonaws.com/shopforge-backend:0cd7aca2459095b0ebf6abcd22363b7cf2e0cd41
           command:
             - sh
             - -c
