@@ -17,5 +17,6 @@ python-slugify==8.0.4
 httpx==0.28.1
 structlog==24.4.0
 
-# Phase 6 — exposes a Prometheus /metrics endpoint on the API
-prometheus-fastapi-instrumentator==7.0.0
+# Phase 6 — Prometheus client for the /metrics endpoint. This library has no
+# framework dependencies, so it never conflicts with the pinned starlette.
+prometheus-client==0.21.1

@@ -1,11 +1,12 @@
+import time
 import uuid
 
 import structlog
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from prometheus_fastapi_instrumentator import Instrumentator
+from fastapi.responses import JSONResponse, Response
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -93,6 +94,40 @@ def ready(db: Session = Depends(get_db)):
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
-# Expose Prometheus metrics at /metrics — request count, latency, status codes.
-# Prometheus scrapes this endpoint (see the ServiceMonitor in observability/).
-Instrumentator().instrument(app).expose(app)
+# --- Prometheus metrics --------------------------------------------------
+# Instrumented with the prometheus_client library directly (no FastAPI
+# wrapper): the wrapper pins starlette<1.0, which clashes with our pinned
+# starlette==1.0.0, so we record the metrics in a small middleware instead.
+
+# A Counter named "http_requests" is exposed as "http_requests_total".
+REQUEST_COUNT = Counter(
+    "http_requests",
+    "Total HTTP requests",
+    ["method", "status"],
+)
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request latency in seconds",
+    ["method"],
+)
+
+# Probe + scrape endpoints are not real user traffic — keep them out.
+_METRICS_EXCLUDE = {"/metrics", "/health", "/ready"}
+
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Record request count + latency for Prometheus."""
+    if request.url.path in _METRICS_EXCLUDE:
+        return await call_next(request)
+    start = time.perf_counter()
+    response = await call_next(request)
+    REQUEST_COUNT.labels(request.method, str(response.status_code)).inc()
+    REQUEST_LATENCY.labels(request.method).observe(time.perf_counter() - start)
+    return response
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics() -> Response:
+    """Prometheus scrape endpoint (see the ServiceMonitor in observability/)."""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
