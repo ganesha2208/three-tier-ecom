@@ -4,21 +4,10 @@
   "tags": ["shopforge"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
-  "time": { "from": "now-1h", "to": "now" },
-  "templating": {
-    "list": [
-      {
-        "name": "datasource",
-        "type": "datasource",
-        "query": "prometheus",
-        "label": "Data source",
-        "current": {},
-        "hide": 0
-      }
-    ]
-  },
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": { "list": [] },
   "annotations": { "list": [] },
   "panels": [
     {
@@ -26,7 +15,6 @@
       "type": "timeseries",
       "title": "Request Rate",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
         "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
         "overrides": []
@@ -38,7 +26,6 @@
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "expr": "sum(rate(http_requests_total[5m]))",
           "legendFormat": "requests/sec"
         }
@@ -49,7 +36,6 @@
       "type": "stat",
       "title": "Error Rate (5xx %)",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -72,7 +58,6 @@
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "expr": "100 * sum(rate(http_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1)",
           "legendFormat": "5xx %"
         }
@@ -83,7 +68,6 @@
       "type": "timeseries",
       "title": "Latency p95",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
         "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
         "overrides": []
@@ -95,7 +79,6 @@
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "p95"
         }
@@ -106,7 +89,6 @@
       "type": "timeseries",
       "title": "Requests by Status",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
@@ -125,7 +107,6 @@
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "expr": "sum by (status) (rate(http_requests_total[5m]))",
           "legendFormat": "{{status}}"
         }
