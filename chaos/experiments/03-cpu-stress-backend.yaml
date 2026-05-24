@@ -1,0 +1,31 @@
+# Experiment 3 — CPU Stress
+#
+# Hypothesis: pegging every backend pod's CPU at 100% triggers the HPA
+# (target = 70% CPU) to scale replicas up. The new pods take load and
+# the average CPU per pod drops back below threshold.
+#
+# Watch on Grafana: per-pod CPU spikes to 100%, backend replica count
+# climbs from 2 -> 4+ within ~2 min, latency briefly elevated then
+# recovers as new pods come online.
+#
+# Duration is intentionally long (5m) — HPA's scale-up policy + the
+# metrics-server scrape interval mean scaling decisions need ~60-90s
+# of sustained load before they fire.
+#
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: cpu-stress-backend
+  namespace: shopforge
+spec:
+  mode: all                    # stress every backend pod simultaneously
+  selector:
+    namespaces:
+      - shopforge
+    labelSelectors:
+      app: backend
+  stressors:
+    cpu:
+      workers: 2               # one worker per vCPU core in the backend's limits
+      load: 100                # 100% utilisation per worker
+  duration: "5m"

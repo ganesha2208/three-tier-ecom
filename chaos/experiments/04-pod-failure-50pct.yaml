@@ -1,0 +1,27 @@
+# Experiment 4 — Partial Outage (50% Pod Failure)
+#
+# Hypothesis: even with half the backend pods made unschedulable, the
+# Service routes traffic to the survivors and the storefront stays up.
+# Unlike pod-kill, pod-failure leaves the pods in place but renders
+# their containers permanently "Pending" — kube-proxy removes them
+# from the Service's endpoint list within seconds.
+#
+# Watch on Grafana: backend Ready replicas drops by ~50%, request rate
+# on remaining pods doubles, latency p95 may rise modestly, error rate
+# should stay near 0 because the surviving pods can carry the load.
+#
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: pod-failure-50pct
+  namespace: shopforge
+spec:
+  action: pod-failure
+  mode: fixed-percent          # disable exactly this % of matching pods
+  value: "50"
+  selector:
+    namespaces:
+      - shopforge
+    labelSelectors:
+      app: backend
+  duration: "3m"
