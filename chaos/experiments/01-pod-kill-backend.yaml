@@ -1,0 +1,22 @@
+# Experiment 1 — Pod Kill
+#
+# Hypothesis: killing one random backend pod does not cause user-visible
+# downtime. The Deployment controller replaces it within ~30s and the
+# Service load-balances around the missing endpoint while it's gone.
+#
+# Watch on Grafana: error rate stays near 0, latency p95 unaffected,
+# request rate dips briefly then recovers.
+#
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: pod-kill-backend
+  namespace: shopforge
+spec:
+  action: pod-kill
+  mode: one                    # kill exactly one matching pod
+  selector:
+    namespaces:
+      - shopforge
+    labelSelectors:
+      app: backend

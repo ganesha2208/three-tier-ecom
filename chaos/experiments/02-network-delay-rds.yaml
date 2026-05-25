@@ -1,0 +1,35 @@
+# Experiment 2 — Network Delay to RDS
+#
+# Hypothesis: a slow database (500ms added latency on every packet to RDS)
+# slows requests but does not fail them. The backend's connection pool +
+# SQLAlchemy timeouts absorb the delay; the frontend still loads products.
+#
+# Watch on Grafana: latency p95 jumps from ~50ms to ~600ms+, error rate
+# stays near 0, request rate steady. After the experiment ends, latency
+# returns to baseline within seconds.
+#
+# Setup (runbook handles this — see chaos/gameday-runbook.md):
+#   RDS_ENDPOINT=$(terraform -chdir=infra/terraform output -raw rds_endpoint | cut -d: -f1)
+#   sed "s|__RDS_ENDPOINT__|$RDS_ENDPOINT|" 02-network-delay-rds.yaml | kubectl apply -f -
+#
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-delay-rds
+  namespace: shopforge
+spec:
+  action: delay
+  mode: all                    # inject the delay on every matching backend pod
+  selector:
+    namespaces:
+      - shopforge
+    labelSelectors:
+      app: backend
+  delay:
+    latency: "500ms"
+    correlation: "0"
+    jitter: "0ms"
+  duration: "3m"
+  direction: to                # outbound traffic from the backend...
+  externalTargets:
+    - "__RDS_ENDPOINT__"       # ...to the RDS hostname (substituted at apply-time)
