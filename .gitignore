@@ -46,3 +46,9 @@ backend/media/
 # Secrets / keys
 *.pem
 *.key
+
+# MkDocs build output
+/site/
+
+# k6 run output
+loadtest/results.json

@@ -1,7 +1,30 @@
-# ShopForge — Production-Grade E-Commerce (React + FastAPI + PostgreSQL)
+# ShopForge — AWS DevOps Portfolio
 
 [![CI](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/ci.yml/badge.svg)](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/ci.yml)
 [![CD](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/cd.yml/badge.svg)](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/cd.yml)
+[![docs](https://github.com/ganesha2208/three-tier-ecom/actions/workflows/docs.yml/badge.svg)](https://ganesha2208.github.io/three-tier-ecom/)
+
+A production-grade, three-tier e-commerce app (React + FastAPI + PostgreSQL)
+shipped end-to-end as an **AWS DevOps portfolio**: Terraform-defined
+infrastructure, Argo CD GitOps delivery, Prometheus / Loki / Grafana
+observability, Chaos Mesh resilience drills, and k6 load tests. Eight
+phases, every one ending in a working artefact on a live EKS cluster.
+
+> 📖 **Full project site:** **<https://ganesha2208.github.io/three-tier-ecom/>**
+> Architecture, per-phase notes, DR runbook, screenshots, demo script.
+
+## What this portfolio demonstrates
+
+- **IaC** — every AWS resource (VPC, EKS, RDS, ECR, IAM/IRSA) in Terraform; one `apply` from zero to a working cluster, one `destroy` to stop billing.
+- **GitOps** — Argo CD reconciles `gitops/apps/*` onto the cluster; a merged image-tag bump *is* the deploy. No `kubectl apply` on a developer machine.
+- **CI/CD with OIDC** — GitHub Actions builds, scans, and pushes signed images to ECR using OIDC federation — zero static AWS keys in the repo.
+- **Production observability** — RED metrics dashboards, structured JSON logs in Loki, Alertmanager rules wired to the right panels.
+- **Resilience proven** — four Chaos Mesh experiments (pod kill, network delay, CPU stress, 50% pod failure) executed live with dashboard evidence.
+- **Honest load numbers** — k6 ramping to 100 VUs against the live ALB, HPA scale-up visible on Grafana.
+- **DR thinking** — RDS PITR + snapshot restore runbook, RPO/RTO targets, region-failover theory.
+- **Honesty** — every metric in the docs site comes from a measurement on this cluster. What was cut (and why) is documented.
+
+## Application features
 
 A full-featured, three-tier e-commerce application built with senior-engineering
 practices: layered architecture, typed APIs, JWT auth with refresh tokens,
