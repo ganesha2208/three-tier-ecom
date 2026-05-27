@@ -52,3 +52,7 @@ backend/media/
 
 # k6 run output
 loadtest/results.json
+
+# Terraform plan / local cache (lock file IS committed)
+infra/terraform/*.tfplan
+infra/terraform/.terraform/

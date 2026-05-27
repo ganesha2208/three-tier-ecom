@@ -67,16 +67,45 @@ Open the **ShopForge — Backend (RED Metrics)** dashboard before starting:
 
 ## Results
 
-Will be filled in after the [live EKS run](phases/phase-8.md).
+Live run on EKS 1.32 in `ap-south-1`, 27 May 2026. Cluster: 2× `m7i-flex.large`
+nodes, backend HPA `min=2 max=4 cpu-target=70%`, RDS `db.t3.micro`.
 
 | Metric              | Observed value |
 | ------------------- | -------------- |
-| Peak request rate   | _(to be measured)_ |
-| p95 latency at peak | _(to be measured)_ |
-| Error rate          | _(to be measured)_ |
-| HPA scale-up time   | _(to be measured)_ |
-| Replicas at peak    | _(to be measured)_ |
-| First bottleneck    | _(to be identified)_ |
+| Total requests      | **52,942** over 8 min |
+| Peak request rate   | **~110 req/s** (see Grafana panel) |
+| p95 latency         | **34.93 ms** (threshold was 800 ms — 23× headroom) |
+| list_products p95   | 39 ms |
+| product_detail p95  | 30 ms |
+| Error rate          | **0.00 %** |
+| Content checks      | **100 %** passed |
+| HPA scale-up        | 2 → 4 replicas in ~2 min after the ramp-to-peak step |
+| Replicas at peak    | **4 (HPA ceiling)** |
+| Backend CPU at peak | **244 %** of the 70 % target — HPA wanted more replicas, capped at max |
+| First bottleneck    | **HPA `maxReplicas` ceiling.** Even at 4 pods the backend was running hot. A production-tuning iteration would raise max to 8–10 and revisit the CPU target before declaring a true bottleneck. |
+
+### Screenshots from the live run
+
+**Grafana — request rate + p95 latency climbing during the peak hold**
+
+![Grafana RED metrics](images/loadtest/01-grafana-red-metrics.png)
+
+**`kubectl get hpa` — backend at 244 % / 70 %, 4/4 replicas**
+
+The HPA target was 70 %; the controller scaled to its `max=4` ceiling and
+the pods kept running well above the target. This is the headline finding:
+HPA fires correctly, but the configured ceiling is the real limit at this
+load — not the app, not the DB.
+
+![HPA scaled to max](images/loadtest/02-hpa-scaled-244pct.png)
+
+**`kubectl get pods -w` — two extra backend pods spawning mid-test**
+
+![Pods scaling up](images/loadtest/03-pods-scaling-up.png)
+
+**k6 summary — all thresholds passed**
+
+![k6 summary](images/loadtest/04-k6-summary.png)
 
 ## Why this scope
 
@@ -84,3 +113,13 @@ Will be filled in after the [live EKS run](phases/phase-8.md).
 test, and it shouldn't pretend to be. It's the *minimum honest load* to
 see autoscaling fire and to learn which subsystem saturates first — which
 is the *only* useful output of a portfolio load test.
+
+## What the next iteration would change
+
+The run exposed the HPA ceiling before it exposed the app's bottleneck. A
+follow-up run would:
+
+1. Raise `maxReplicas` to 8 (and the node group max) so HPA isn't the limit.
+2. Push to 200–300 VUs so the per-pod CPU actually drops toward 70 %.
+3. Add a write-heavy stage (cart + checkout) so RDS connection pooling
+   comes under pressure — that's the likely next real bottleneck.

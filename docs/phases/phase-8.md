@@ -10,8 +10,12 @@ load test, and a real docs site.
   procedure, recovery objective table (RPO ≤ 5 min, RTO ≤ 30 min),
   region-failover theory
 - **[k6 load test](../load-test.md)** — `loadtest/k6-checkout.js` ramps to
-  100 concurrent users against the live ALB; thresholds on p95 latency and
-  error rate; HPA scale-up observed on the [Phase 6 dashboard](phase-6.md)
+  100 concurrent users against the live ALB. **Live run on 27 May 2026
+  passed all thresholds** (p95 = 34.93 ms, error rate = 0 %, 52,942
+  requests total). Backend HPA scaled 2 → 4 (its configured max) during
+  the peak; CPU exceeded the 70 % target — the HPA ceiling, not the app,
+  was the first limit hit. See the [load-test page](../load-test.md) for
+  screenshots and the follow-up plan.
 - **MkDocs Material site** (this site) — auto-deployed to GitHub Pages from
   `main` via `.github/workflows/docs.yml`
 - **[Demo script](../demo-script.md)** — 3–5 minute walkthrough beats and
