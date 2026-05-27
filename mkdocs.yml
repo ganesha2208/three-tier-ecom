@@ -84,6 +84,13 @@ nav:
   - Concept briefs:
       - Phase 0 — Why app hardening first: concept-briefs/phase-0.md
       - Phase 1 — Identity service extraction: concept-briefs/phase-1.md
+      - Phase 2 — Containers & supply chain: concept-briefs/phase-2.md
+      - Phase 3 — DevSecOps CI/CD: concept-briefs/phase-3.md
+      - Phase 4 — Terraform infra: concept-briefs/phase-4.md
+      - Phase 5 — EKS + GitOps: concept-briefs/phase-5.md
+      - Phase 6 — Observability: concept-briefs/phase-6.md
+      - Phase 7 — Chaos engineering: concept-briefs/phase-7.md
+      - Phase 8 — DR, load, docs: concept-briefs/phase-8.md
   - Runbooks:
       - DR runbook: dr-runbook.md
       - Chaos game day: chaos-gameday.md
