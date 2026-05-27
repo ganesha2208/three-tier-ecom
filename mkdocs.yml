@@ -66,12 +66,10 @@ markdown_extensions:
 plugins:
   - search
 
-not_in_nav: |
-  concept-briefs/
-
 nav:
   - Home: index.md
   - Architecture: architecture.md
+  - Recap: recap.md
   - Phases:
       - Overview: phases/index.md
       - Phase 0 — App hardening: phases/phase-0.md
@@ -83,6 +81,8 @@ nav:
       - Phase 6 — Observability: phases/phase-6.md
       - Phase 7 — Chaos engineering: phases/phase-7.md
       - Phase 8 — DR, load test, docs: phases/phase-8.md
+  - Concept briefs:
+      - Phase 0 — Why app hardening first: concept-briefs/phase-0.md
   - Runbooks:
       - DR runbook: dr-runbook.md
       - Chaos game day: chaos-gameday.md

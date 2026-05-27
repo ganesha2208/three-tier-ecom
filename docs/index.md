@@ -43,6 +43,15 @@ load-tested with **k6**.
 
     [:octicons-arrow-right-24: View](architecture.md)
 
+-   :material-map: **Recap**
+
+    ---
+
+    A diagrammatic walkthrough of all 8 phases — what was built, why, and
+    how the layers stack together.
+
+    [:octicons-arrow-right-24: See the journey](recap.md)
+
 -   :material-list-status: **Phases**
 
     ---
