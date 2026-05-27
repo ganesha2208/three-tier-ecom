@@ -83,6 +83,7 @@ nav:
       - Phase 8 — DR, load test, docs: phases/phase-8.md
   - Concept briefs:
       - Phase 0 — Why app hardening first: concept-briefs/phase-0.md
+      - Phase 1 — Identity service extraction: concept-briefs/phase-1.md
   - Runbooks:
       - DR runbook: dr-runbook.md
       - Chaos game day: chaos-gameday.md
