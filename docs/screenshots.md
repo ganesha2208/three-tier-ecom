@@ -194,15 +194,16 @@ passed.
 
 ```bash
 # 1. Drop the PNG into the appropriate phase folder
-cp ~/Pictures/my-capture.png docs/images/phase-7/09-new-experiment.png
+#    e.g. docs/images/phase-7/<descriptive-name>.png
+cp ~/Pictures/my-capture.png "docs/images/phase-7/${NAME}.png"
 
-# 2. In this file, add a short section with the embed
-#    ![caption](images/phase-7/09-new-experiment.png)
+# 2. In this file, add a short section with a standard markdown image
+#    tag pointing at the new file under images/phase-7/
 
 # 3. Preview locally
 mkdocs serve
 
 # 4. Commit
-git add docs/images/phase-7/09-new-experiment.png docs/screenshots.md
+git add "docs/images/phase-7/${NAME}.png" docs/screenshots.md
 git commit -m "docs: add screenshot for new chaos experiment"
 ```
