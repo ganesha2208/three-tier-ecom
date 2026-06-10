@@ -1,7 +1,12 @@
-# Prometheus alert rules for the ShopForge backend.
+# Prometheus alert rules for the ShopForge stack.
 # Prometheus auto-discovers this PrometheusRule (ruleSelectorNilUsesHelmValues=false).
-# Cluster-level alerts (pod crash-loop, node pressure, etc.) are already
-# covered by kube-prometheus-stack's built-in rules — these are app-specific.
+#
+# Coverage maps to the SRE four-golden-signals + USE method:
+#   - Latency  -> ShopForgeHighLatency
+#   - Traffic  -> (implicit via RED dashboard, no alert needed)
+#   - Errors   -> ShopForgeHighErrorRate, ShopForgeBackendDown
+#   - Saturation -> ShopForgePodCpuHigh, ShopForgePodMemoryHigh, ShopForgeNodeCpuHigh
+#   - Crashloop / availability -> ShopForgePodRestarting, ShopForgeHpaAtMax
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -13,7 +18,7 @@ spec:
   groups:
     - name: shopforge-backend.rules
       rules:
-        # Fires when too many requests are failing.
+        # ---- ERRORS ------------------------------------------------------
         - alert: ShopForgeHighErrorRate
           expr: |
             sum(rate(http_requests_total{status=~"5.."}[5m]))
@@ -25,7 +30,7 @@ spec:
             summary: "Backend 5xx error rate above 5%"
             description: "More than 5% of backend requests have failed for 5 minutes."
 
-        # Fires when the app is slow.
+        # ---- LATENCY -----------------------------------------------------
         - alert: ShopForgeHighLatency
           expr: |
             histogram_quantile(0.95,
@@ -37,7 +42,7 @@ spec:
             summary: "Backend p95 latency above 1s"
             description: "95th-percentile request latency has exceeded 1 second for 10 minutes."
 
-        # Fires when Prometheus cannot reach the backend at all.
+        # ---- AVAILABILITY ------------------------------------------------
         - alert: ShopForgeBackendDown
           expr: up{namespace="shopforge", service="backend"} == 0
           for: 3m
@@ -46,3 +51,80 @@ spec:
           annotations:
             summary: "Backend scrape target is down"
             description: "Prometheus cannot scrape the backend /metrics endpoint."
+
+    - name: shopforge-saturation.rules
+      rules:
+        # ---- POD CPU SATURATION -----------------------------------------
+        # Fires when a pod sustained > 80% of its CPU limit for 5 min.
+        # Most useful early warning before HPA decisions or throttling.
+        - alert: ShopForgePodCpuHigh
+          expr: |
+            sum by (namespace, pod) (
+              rate(container_cpu_usage_seconds_total{namespace="shopforge", container!=""}[5m])
+            )
+            /
+            sum by (namespace, pod) (
+              kube_pod_container_resource_limits{namespace="shopforge", resource="cpu"}
+            ) > 0.80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.pod }} CPU above 80% of limit"
+            description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} has been above 80% CPU limit for 5 minutes. HPA may scale or throttling will follow."
+
+        # ---- POD MEMORY SATURATION --------------------------------------
+        - alert: ShopForgePodMemoryHigh
+          expr: |
+            sum by (namespace, pod) (
+              container_memory_working_set_bytes{namespace="shopforge", container!=""}
+            )
+            /
+            sum by (namespace, pod) (
+              kube_pod_container_resource_limits{namespace="shopforge", resource="memory"}
+            ) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.pod }} memory above 85% of limit"
+            description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} is at >85% memory limit for 5 minutes. OOMKill risk is rising."
+
+        # ---- POD CRASHLOOP ----------------------------------------------
+        # Fires when a pod restarts >3 times in 15 min — classic crashloop signal.
+        - alert: ShopForgePodRestarting
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="shopforge"}[15m]) > 3
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.pod }} restarting repeatedly"
+            description: "Pod {{ $labels.pod }} has restarted more than 3 times in 15 minutes — likely crashlooping."
+
+    - name: shopforge-cluster.rules
+      rules:
+        # ---- NODE CPU SATURATION ----------------------------------------
+        - alert: ShopForgeNodeCpuHigh
+          expr: |
+            100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} CPU above 85%"
+            description: "Node {{ $labels.instance }} has sustained > 85% CPU usage for 10 minutes. Consider adding capacity."
+
+        # ---- HPA OUT OF HEADROOM ----------------------------------------
+        # Fires when HPA hits maxReplicas — no scale room left.
+        - alert: ShopForgeHpaAtMax
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="shopforge"}
+            >=
+            kube_horizontalpodautoscaler_spec_max_replicas{namespace="shopforge"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HPA {{ $labels.horizontalpodautoscaler }} at max replicas"
+            description: "HPA {{ $labels.horizontalpodautoscaler }} in {{ $labels.namespace }} has been at maxReplicas for 5 minutes. Capacity ceiling reached."

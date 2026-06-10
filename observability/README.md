@@ -8,7 +8,8 @@ observability/
 ├── kube-prometheus-stack-values.yaml   Helm values: Prometheus + Grafana + Alertmanager
 ├── loki-values.yaml                    Helm values: Loki + Promtail (logs)
 ├── servicemonitor.yaml                 tells Prometheus to scrape the backend
-├── alerts.yaml                         PrometheusRule — 3 app-specific alerts
+├── alerts.yaml                         PrometheusRule — 8 SRE-style alerts
+├── alertmanager-config.yaml            email routing (applied only if SMTP_PASSWORD set)
 └── dashboards/
     └── shopforge-backend.json          Grafana RED-metrics dashboard
 ```
@@ -54,8 +55,17 @@ cd .. && bash gitops/bootstrap.sh            # app deploys via Argo CD
 ### 3. Install the observability stack
 
 ```bash
+# Without email alerting:
 bash observability/install.sh                # ~5-8 min
+
+# With email alerting (Gmail App Password):
+SMTP_PASSWORD='abcd efgh ijkl mnop' bash observability/install.sh
 ```
+
+The Gmail App Password is generated at <https://myaccount.google.com/apppasswords>
+after enabling 2-Step Verification on the sender account. The installer reads it
+from the env var, strips whitespace, and creates an in-cluster Secret —
+the value never lives in git.
 
 ### 4. Generate traffic, then view
 
@@ -76,6 +86,24 @@ kubectl delete application shopforge -n argocd   # ALB removed
 cd infra/terraform && terraform destroy
 ```
 
+## Alert rules (8 total)
+
+| Rule | Signal | Trigger | Severity |
+|------|--------|---------|----------|
+| `ShopForgeHighErrorRate` | errors | 5xx rate > 5% for 5 min | warning |
+| `ShopForgeHighLatency` | latency | p95 > 1s for 10 min | warning |
+| `ShopForgeBackendDown` | availability | scrape down for 3 min | critical |
+| `ShopForgePodCpuHigh` | saturation | CPU > 80% of limit, 5 min | warning |
+| `ShopForgePodMemoryHigh` | saturation | memory > 85% of limit, 5 min | warning |
+| `ShopForgePodRestarting` | crashloop | restarts > 3 in 15 min | critical |
+| `ShopForgeNodeCpuHigh` | node | node CPU > 85% for 10 min | warning |
+| `ShopForgeHpaAtMax` | capacity | HPA at maxReplicas for 5 min | warning |
+
+Coverage maps to the SRE four golden signals + USE method. Critical-severity
+alerts route on a 0s wait + 1h repeat; warnings group on a 10s wait + 4h repeat
+to avoid inbox spam. All alerts also send a "RESOLVED" email when the condition
+clears (`sendResolved: true`).
+
 ## Troubleshooting
 
 - **Dashboard has no data** — confirm the backend pods run the `/metrics`
@@ -83,3 +111,6 @@ cd infra/terraform && terraform destroy
   *Status → Targets* for the `shopforge-backend` target being UP.
 - **No logs in Loki** — check the Promtail DaemonSet:
   `kubectl -n observability get pods | grep promtail`.
+- **Alerts fire but no email** — `kubectl -n observability logs sts/alertmanager-kube-prometheus-stack-alertmanager`
+  for SMTP auth errors. Most common cause: wrong/expired App Password, or
+  Gmail 2FA was disabled (which invalidates all App Passwords).
