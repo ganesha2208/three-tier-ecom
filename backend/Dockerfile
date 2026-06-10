@@ -14,6 +14,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ---- Stage 2: runtime — slim image, non-root, no build tooling ----
 FROM python:3.12-slim AS runtime
 
+# Pull latest OS security patches (openssl, libc, etc.) so Trivy's
+# fixable-HIGH/CRITICAL scan stays clean. python:3.12-slim rebuilds
+# weekly, but Debian security advisories land sooner — without this,
+# CD fails the moment a fixed CVE is published upstream.
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
