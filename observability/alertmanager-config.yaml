@@ -1,0 +1,51 @@
+# AlertmanagerConfig — route alerts to email via Gmail SMTP.
+#
+# The SMTP credentials Secret (smtp-creds) is created imperatively by
+# install.sh (so the password never lives in git). Without it Alertmanager
+# logs auth errors but the pod stays healthy — alerts simply don't fan out.
+#
+# Routing logic:
+#   - All alerts go to the "email" receiver.
+#   - Identical alerts are grouped (groupBy) and re-sent at most every 4h
+#     (repeatInterval), avoiding inbox spam during long-running incidents.
+#   - sendResolved=true means you also get a "RESOLVED" email when the
+#     condition clears — closes the loop without checking the dashboard.
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: shopforge-email
+  namespace: observability
+  labels:
+    # Helm release label so kube-prometheus-stack's Alertmanager picks it up
+    # (selector is set to alertmanagerConfigSelectorNilUsesHelmValues=false
+    # in the values file, but the label still helps explicit matching).
+    alertmanagerConfig: shopforge
+spec:
+  route:
+    receiver: email
+    groupBy: [alertname, severity, namespace]
+    groupWait: 10s
+    groupInterval: 5m
+    repeatInterval: 4h
+    # critical alerts get their own sub-route — same receiver but faster cadence
+    routes:
+      - matchers:
+          - name: severity
+            value: critical
+        receiver: email
+        groupWait: 0s
+        repeatInterval: 1h
+  receivers:
+    - name: email
+      emailConfigs:
+        - to: ganeshaofficial01@gmail.com
+          from: ganeshaofficial01@gmail.com
+          smarthost: smtp.gmail.com:587
+          authUsername: ganeshaofficial01@gmail.com
+          authPassword:
+            name: smtp-creds
+            key: password
+          requireTLS: true
+          sendResolved: true
+          headers:
+            subject: "[ShopForge] {{ .Status | toUpper }} {{ .GroupLabels.alertname }} ({{ .GroupLabels.severity }})"

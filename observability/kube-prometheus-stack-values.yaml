@@ -35,6 +35,11 @@ grafana:
 
 alertmanager:
   alertmanagerSpec:
+    # Pick up AlertmanagerConfig CRs that aren't labelled with this Helm
+    # release name (default selector would filter ours out).
+    alertmanagerConfigSelectorNilUsesHelmValues: false
+    alertmanagerConfigMatcherStrategy:
+      type: None
     resources:
       requests:
         cpu: 25m
