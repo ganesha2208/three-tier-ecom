@@ -18,6 +18,14 @@ RUN npx vite build         # bundle only (skips tsc type-check); outputs to /app
 # nginx-unprivileged runs as the non-root "nginx" user (uid 101) and
 # listens on 8080 — a non-root user cannot bind ports below 1024.
 FROM nginxinc/nginx-unprivileged:alpine
+
+# Pull latest Alpine security patches (openssl, libcrypto3, libssl3) so
+# Trivy's fixable-HIGH/CRITICAL scan stays clean. Base image sets USER 101;
+# switch to root for apk, then back.
+USER root
+RUN apk update && apk upgrade --no-cache
+USER 101
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
