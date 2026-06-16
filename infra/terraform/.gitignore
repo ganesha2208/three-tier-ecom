@@ -4,4 +4,8 @@
 *.tfstate.*
 crash.log
 
+# Plan output files — binary, environment-specific, not safe to commit.
+tfplan
+*.tfplan
+
 # Keep .terraform.lock.hcl committed (it pins provider versions).

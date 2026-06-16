@@ -38,14 +38,15 @@ spec:
   receivers:
     - name: email
       emailConfigs:
-        - to: ganeshaofficial01@gmail.com
-          from: ganeshaofficial01@gmail.com
+        - to: ganeshadream11@gmail.com
+          from: ganeshadream11@gmail.com
           smarthost: smtp.gmail.com:587
-          authUsername: ganeshaofficial01@gmail.com
+          authUsername: ganeshadream11@gmail.com
           authPassword:
             name: smtp-creds
             key: password
           requireTLS: true
           sendResolved: true
           headers:
-            subject: "[ShopForge] {{ .Status | toUpper }} {{ .GroupLabels.alertname }} ({{ .GroupLabels.severity }})"
+            - key: Subject
+              value: "[ShopForge] {{ .Status | toUpper }} {{ .GroupLabels.alertname }} ({{ .GroupLabels.severity }})"
